@@ -58,13 +58,66 @@ struct Home: View {
                 HeaderView()
             }
             }
-        }
+        }.ignoresSafeArea(.container, edges: .top)
     }
     
     func TasksView()->some View{
         LazyVStack(spacing: 18){
-            
+            if let tasks = taskModel.filteredTasks{
+                if tasks.isEmpty{
+                    Text("No tasks found")
+                        .font(.system(size: 16))
+                        .fontWeight(.light)
+                        .offset(y: 100)
+                }else{
+                    ForEach(tasks){ task in
+                        TaskCardView(task: task)
+                    }
+                }
+            }else{
+                ProgressView().offset(y: 100)
+            }
         }
+        .padding()
+        .padding(.top)
+        .onChange(of: taskModel.currentDay) { newValue in
+            taskModel.filterTodayTasks()
+        }
+    }
+    
+    func TaskCardView(task: Task)->some View{
+        HStack(alignment: .top, spacing: 30){
+            VStack(spacing:10){
+                Circle()
+                    .fill(.black)
+                    .frame(width: 15, height: 15)
+                    .background(
+                        Circle()
+                            .stroke(.black, lineWidth: 1)
+                            .padding(-3)
+                    )
+                Rectangle()
+                    .fill(.black)
+                    .frame(width: 3)
+            }
+            
+            VStack{
+                HStack(alignment: .top, spacing: 10){
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(task.taskTitle)
+                            .font(.title2.bold())
+                        Text(task.taskDescription)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }.hLeading()
+                    Text(task.taskDate.formatted(date: .omitted, time: .shortened))
+                }
+            }.foregroundColor(.white)
+                .padding()
+                .hLeading()
+                .background(.black)
+                .cornerRadius(25)
+        }.hLeading()
     }
     
     func HeaderView()->some View{
@@ -88,6 +141,7 @@ struct Home: View {
             }
         }
         .padding()
+        .padding(.top , getSafeArea().top )
         .background(.white)
     }
 }
@@ -108,5 +162,14 @@ extension View{
     }
     func hCenter()->some View{
         self.frame(maxWidth: .infinity, alignment: .center)
+    }
+    func getSafeArea()->UIEdgeInsets{
+        guard let screen = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return .zero
+        }
+        guard let safeArea = screen.windows.first?.safeAreaInsets else{
+            return .zero
+        }
+        return safeArea
     }
 }
